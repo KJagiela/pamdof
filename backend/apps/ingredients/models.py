@@ -13,7 +13,7 @@ class Ingredient(TimeStampedModel):
     calories = models.IntegerField()
     protein = models.DecimalField(max_digits=5, decimal_places=2)
     fat = models.DecimalField(max_digits=5, decimal_places=2)
-    carbohydrates = models.DecimalField(max_digits=5, decimal_places=2)
+    carbs = models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
         return self.name

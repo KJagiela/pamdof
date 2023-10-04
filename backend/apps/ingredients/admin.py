@@ -8,7 +8,7 @@ from apps.ingredients.models import (
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'calories', 'protein', 'fat', 'carbohydrates']
+    list_display = ['name', 'calories', 'protein', 'fat', 'carbs']
 
 
 @admin.register(FODMAPInfo)
