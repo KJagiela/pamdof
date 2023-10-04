@@ -21,15 +21,5 @@ services:
     env_file:
       - ./backend/.env
 
-  web:
-    build:
-      context: .
-      dockerfile: ./.devops/frontend/Dockerfile
-      target: develop-stage
-    environment:
-      NODE_ENV: development
-    env_file:
-      - ./frontend/.env
-
   redis:
     image: redis:6
