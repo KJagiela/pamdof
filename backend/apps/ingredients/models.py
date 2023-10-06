@@ -9,7 +9,7 @@ from apps.ingredients.choices import (
 
 
 class Ingredient(TimeStampedModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     calories = models.IntegerField()
     protein = models.DecimalField(max_digits=5, decimal_places=2)
     fat = models.DecimalField(max_digits=5, decimal_places=2)
@@ -17,6 +17,9 @@ class Ingredient(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class FODMAPInfo(TimeStampedModel):

@@ -7,28 +7,37 @@ class Recipe(TimeStampedModel):
     name = models.CharField(max_length=255)
     original_url = models.URLField(blank=True, null=True)
     ingredients = models.ManyToManyField(
-        'ingredients.Ingredient', through='recipes.RecipeIngredient'
+        'ingredients.Ingredient',
+        through='recipes.RecipeIngredient',
     )
     instructions = models.TextField()
+    servings = models.IntegerField(default=1)
 
     def __str__(self):
         return self.name
 
+    def macro_sum(self, macro):
+        return round(
+            sum(getattr(ri, macro) for ri in self.recipeingredient_set.all())
+            / self.servings,
+            2,
+        )
+
     @property
     def calories(self):
-        return sum(ri.calories for ri in self.recipeingredient_set.all())
+        return self.macro_sum('calories')
 
     @property
     def protein(self):
-        return sum(ri.protein for ri in self.recipeingredient_set.all())
+        return self.macro_sum('protein')
 
     @property
     def fat(self):
-        return sum(ri.fat for ri in self.recipeingredient_set.all())
+        return self.macro_sum('fat')
 
     @property
     def carbs(self):
-        return sum(ri.carbs for ri in self.recipeingredient_set.all())
+        return self.macro_sum('carbs')
 
 
 class RecipeIngredient(models.Model):
