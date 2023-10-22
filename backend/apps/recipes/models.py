@@ -7,6 +7,8 @@ from apps.ingredients.models import (
     FODMAPInfo,
     IngredientMeasurement,
 )
+from apps.recipes.choices import FODMAPLevel
+from apps.recipes.exceptions import MissingInfo
 
 
 class Recipe(TimeStampedModel):
@@ -48,12 +50,27 @@ class Recipe(TimeStampedModel):
     def carbs(self):
         return self.macro_sum('carbs')
 
-
-class MissingInfo(Exception):
-    def __init__(self, *args, **kwargs):
-        self.ingredient = kwargs.get('ingredient')
-        self.unit = kwargs.get('unit')
-        super().__init__(self, *args)
+    @property
+    def fodmap_level(self) -> str:
+        yellow_fodmaps = set()
+        for portion in self.recipeingredient_set.all():
+            try:
+                level = portion.fodmap_level
+            except MissingInfo as exc:
+                return f'Missing FODMAP info: {exc.ingredient}, {exc.unit}'
+            fodmaps = portion.ingredient.fodmapinfo.fodmaps
+            if level == FODMAPLevel.RED:
+                return FODMAPLevel.RED.value
+            # they were already yellow and are marked as yellow again
+            #  so they are red
+            if level == FODMAPLevel.YELLOW:
+                # check if any of the ingredients are already yellow
+                if set(fodmaps) & yellow_fodmaps:
+                    return FODMAPLevel.RED.value
+                yellow_fodmaps |= set(fodmaps)
+        if yellow_fodmaps:
+            return FODMAPLevel.YELLOW.value
+        return FODMAPLevel.GREEN.value
 
 
 class RecipeIngredient(models.Model):
@@ -101,8 +118,22 @@ class RecipeIngredient(models.Model):
     def carbs(self):
         return self.ingredient.carbs * self.amount_g / 100
 
-    def fodmap_level(self):
+    @property
+    def fodmap_level(self) -> FODMAPLevel:
         try:
-            return self.ingredient.fodmapinfo
+            info = self.ingredient.fodmapinfo
         except FODMAPInfo.DoesNotExist:
-            return 'Unknown'
+            raise MissingInfo(ingredient=self.ingredient, unit=self.unit)
+        portions = self.recipe.servings
+        g_per_serving = self.amount_g / portions
+        if (
+            not info.green_serving_size
+            and not info.yellow_serving_size
+            and not info.red_serving_size
+        ):
+            return FODMAPLevel.GREEN
+        if info.green_serving_size and g_per_serving <= info.green_serving_size:
+            return FODMAPLevel.GREEN
+        if info.yellow_serving_size and g_per_serving <= info.yellow_serving_size:
+            return FODMAPLevel.YELLOW
+        return FODMAPLevel.RED

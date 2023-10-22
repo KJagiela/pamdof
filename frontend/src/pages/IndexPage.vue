@@ -4,11 +4,4 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useQuasar } from 'quasar'
-
-const $q = useQuasar()
-
-const availableGroups = ref(null)
-
 </script>
